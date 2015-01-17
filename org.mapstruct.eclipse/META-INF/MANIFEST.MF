@@ -1,0 +1,14 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: MapStruct plug-in
+Bundle-SymbolicName: org.mapstruct.eclipse;singleton:=true
+Bundle-Version: 0.1.0.qualifier
+Bundle-Activator: org.mapstruct.eclipse.internal.MapStructPlugIn
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.jdt.core,
+ org.eclipse.jdt.ui,
+ org.eclipse.jface.text
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: MapStruct.org

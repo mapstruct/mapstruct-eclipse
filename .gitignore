@@ -1,0 +1,11 @@
+# Eclipse
+.metadata
+.classpath
+.project
+.settings
+.factorypath
+.checkstyle
+.externalToolBuilders
+
+# Build
+/*/target
