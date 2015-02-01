@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: MapStruct plug-in
+Bundle-Name: MapStruct Plug-In
 Bundle-SymbolicName: org.mapstruct.eclipse;singleton:=true
 Bundle-Version: 0.1.0.qualifier
 Bundle-Activator: org.mapstruct.eclipse.internal.MapStructPlugIn
