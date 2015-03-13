@@ -53,7 +53,7 @@ import org.eclipse.jface.text.contentassist.IContextInformation;
 
 /**
  * Computes MapStruct specific content assist completion proposals.
- * 
+ *
  * @author Lars Wetzer
  */
 public class MapStructCompletionProposalComputer implements IJavaCompletionProposalComputer {
@@ -247,13 +247,13 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
                     IMethodBinding binding = node.resolveBinding();
 
                     ITypeBinding returnType = binding.getReturnType();
-                    targetProperties.addAll( findProperties( returnType.getDeclaredMethods(), SET_PREFIX ) );
+                    targetProperties.addAll( findProperties( Bindings.findAllMethodNames( returnType ), SET_PREFIX ) );
 
                     ITypeBinding[] parameterTypes = binding.getParameterTypes();
                     if ( parameterTypes.length == 1 ) {
-                        IMethodBinding[] declaredMethods = parameterTypes[0].getDeclaredMethods();
-                        sourceProperties.addAll( findProperties( declaredMethods, GET_PREFIX ) );
-                        sourceProperties.addAll( findProperties( declaredMethods, IS_PREFIX ) );
+                        Set<String> methodNames = Bindings.findAllMethodNames( parameterTypes[0] );
+                        sourceProperties.addAll( findProperties( methodNames, GET_PREFIX ) );
+                        sourceProperties.addAll( findProperties( methodNames, IS_PREFIX ) );
                     }
 
                     return true;
@@ -271,11 +271,11 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
     /**
      * Finds {@link IMethodBinding}s starting with the given prefix and extracts the associated property name from it.
      */
-    private Set<String> findProperties(IMethodBinding[] methodBindings, String methodPrefix) {
+    private Set<String> findProperties(Set<String> methodNames, String methodPrefix) {
         Set<String> returnValue = new HashSet<String>();
-        for ( IMethodBinding methodBinding : methodBindings ) {
-            if ( methodBinding.getName().startsWith( methodPrefix ) ) {
-                String propertyName = methodBinding.getName().substring( methodPrefix.length() );
+        for ( String methodName : methodNames ) {
+            if ( methodName.startsWith( methodPrefix ) ) {
+                String propertyName = methodName.substring( methodPrefix.length() );
                 returnValue.add( Introspector.decapitalize( propertyName ) );
             }
         }
