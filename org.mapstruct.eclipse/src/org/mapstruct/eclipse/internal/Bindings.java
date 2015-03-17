@@ -45,7 +45,7 @@ public class Bindings {
     }
 
     private static void collectMethodNames(ITypeBinding curr, Set<ITypeBinding> visited, Set<String> methodNames) {
-        if ( isNotJavaLangObject( curr ) && visited.add( curr ) ) {
+        if ( !isJavaLangObject( curr ) && visited.add( curr ) ) {
             for ( IMethodBinding methodBinding : curr.getDeclaredMethods() ) {
                 methodNames.add( methodBinding.getName() );
             }
@@ -53,6 +53,7 @@ public class Bindings {
             for ( ITypeBinding ifc : curr.getInterfaces() ) {
                 collectMethodNames( ifc, visited, methodNames );
             }
+
             ITypeBinding superClass = curr.getSuperclass();
             if ( superClass != null ) {
                 collectMethodNames( superClass, visited, methodNames );
@@ -60,7 +61,7 @@ public class Bindings {
         }
     }
 
-    private static boolean isNotJavaLangObject(ITypeBinding curr) {
-        return !curr.getQualifiedName().equals( "java.lang.Object" );
+    private static boolean isJavaLangObject(ITypeBinding curr) {
+        return curr.getQualifiedName().equals( "java.lang.Object" );
     }
 }
