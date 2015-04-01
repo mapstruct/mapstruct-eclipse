@@ -20,7 +20,6 @@ package org.mapstruct.eclipse.internal;
 
 import java.beans.Introspector;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -50,37 +49,32 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
  *
  * @author Lars Wetzer
  */
-public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
+class MappingAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
 
     private static final String MAPPING_ANNOTATION_QUALIFIED_NAME = "org.mapstruct.Mapping"; //$NON-NLS-1$
-    private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList( "Mappings", "Mapping" ); //$NON-NLS-1$ //$NON-NLS-2$
     private static final String SOURCE_ANNOTATION_METHOD = "source"; //$NON-NLS-1$
     private static final String TARGET_ANNOTATION_METHOD = "target"; //$NON-NLS-1$
     private static final String GET_PREFIX = "get"; //$NON-NLS-1$
     private static final String SET_PREFIX = "set"; //$NON-NLS-1$
     private static final String IS_PREFIX = "is"; //$NON-NLS-1$
 
-    private static final List<ICompletionProposal> EMPTY_PROPOSALS = Collections.emptyList();
-
     @Override
-    public List<ICompletionProposal> computeCompletionProposals(JavaContentAssistInvocationContext javaContent,
-                                                                ICompilationUnit compilationUnit, int invocationOffset,
-                                                                IAnnotation annotation) throws JavaModelException {
+    protected List<ICompletionProposal> computeCompletionProposals(final JavaContentAssistInvocationContext javaContent,
+                                                                   final ICompilationUnit compilationUnit,
+                                                                   final int invocationOffset,
+                                                                   final IAnnotation annotation)
+        throws JavaModelException {
 
-        if ( MAPPING_ANNOTATION_NAMES.contains( annotation.getElementName() )
-            && isInRange( invocationOffset, annotation.getSourceRange().getOffset(), annotation
-                                                                                               .getSourceRange()
-                                                                                               .getLength() ) ) {
-
+        if ( isInRange( invocationOffset, annotation.getSourceRange().getOffset(), annotation
+                                                                                             .getSourceRange()
+                                                                                             .getLength() ) ) {
             return parseCompilationUnit(
                 compilationUnit,
                 invocationOffset,
                 String.valueOf( javaContent.getCoreContext().getToken() ) );
-
         }
 
-        return EMPTY_PROPOSALS;
-
+        return Collections.emptyList();
     }
 
     /**
@@ -90,7 +84,7 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
     private List<ICompletionProposal> parseCompilationUnit(final ICompilationUnit compilationUnit,
                                                            final int invocationOffset, final String token) {
 
-        List<ICompletionProposal> returnValue = new ArrayList<ICompletionProposal>();
+        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
 
         ASTParser parser = ASTParser.newParser( AST.JLS8 );
         parser.setKind( ASTParser.K_COMPILATION_UNIT );
@@ -138,7 +132,7 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
                             null,
                             null );
 
-                    returnValue.add( proposal );
+                    proposals.add( proposal );
 
                 }
 
@@ -146,7 +140,7 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
 
         }
 
-        return returnValue;
+        return proposals;
     }
 
     /**
