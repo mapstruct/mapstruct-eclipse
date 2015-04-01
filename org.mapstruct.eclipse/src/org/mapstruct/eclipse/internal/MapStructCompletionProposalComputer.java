@@ -41,6 +41,7 @@ import org.eclipse.jface.text.contentassist.IContextInformation;
 public class MapStructCompletionProposalComputer implements IJavaCompletionProposalComputer {
 
     private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList( "Mappings", "Mapping" ); //$NON-NLS-1$ //$NON-NLS-2$
+    private static final String MAPPER_ANNOTATION_NAME = "Mapper"; //$NON-NLS-1$
 
     @Override
     public void sessionStarted() {
@@ -101,6 +102,14 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
                         invocationOffset,
                         annotation );
 
+                }
+                else if ( MAPPER_ANNOTATION_NAME.contains( annotation.getElementName() ) ) {
+                    proposalComputer = new MapperAnnotationCompletionProposalComputer();
+                    return proposalComputer.computeCompletionProposals(
+                        javaContent,
+                        compilationUnit,
+                        invocationOffset,
+                        annotation );
                 }
             }
 
