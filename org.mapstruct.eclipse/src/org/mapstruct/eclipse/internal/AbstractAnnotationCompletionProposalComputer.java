@@ -22,10 +22,10 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
@@ -36,8 +36,6 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 
 abstract class AbstractAnnotationCompletionProposalComputer implements IJavaCompletionProposalComputer {
-
-    static final List<ICompletionProposal> EMPTY_PROPOSALS = Collections.emptyList();
 
     @Override
     public void sessionStarted() {
@@ -65,7 +63,7 @@ abstract class AbstractAnnotationCompletionProposalComputer implements IJavaComp
         try {
 
             if ( !( context instanceof JavaContentAssistInvocationContext ) ) {
-                return EMPTY_PROPOSALS;
+                return Collections.emptyList();
             }
 
             JavaContentAssistInvocationContext javaContent = (JavaContentAssistInvocationContext) context;
@@ -73,19 +71,19 @@ abstract class AbstractAnnotationCompletionProposalComputer implements IJavaComp
             ICompilationUnit compilationUnit = javaContent.getCompilationUnit();
 
             if ( compilationUnit == null || !compilationUnit.isStructureKnown() ) {
-                return EMPTY_PROPOSALS;
+                return Collections.emptyList();
             }
 
             int invocationOffset = javaContent.getInvocationOffset();
 
             IJavaElement javaElement = compilationUnit.getElementAt( invocationOffset );
 
-            if ( !( javaElement instanceof IMethod ) ) {
-                return EMPTY_PROPOSALS;
+            if ( !( javaElement instanceof IAnnotatable ) ) {
+                return Collections.emptyList();
             }
 
-            IMethod method = (IMethod) javaElement;
-            for ( IAnnotation annotation : method.getAnnotations() ) {
+            final IAnnotatable annotatable = (IAnnotatable) javaElement;
+            for ( final IAnnotation annotation : annotatable.getAnnotations() ) {
 
                 if ( getAnnotationNames().contains( annotation.getElementName() )
                     && isInRange(
@@ -102,10 +100,10 @@ abstract class AbstractAnnotationCompletionProposalComputer implements IJavaComp
             }
         }
         catch ( Exception e ) {
-            return EMPTY_PROPOSALS;
+            return Collections.emptyList();
         }
 
-        return EMPTY_PROPOSALS;
+        return Collections.emptyList();
 
     }
 

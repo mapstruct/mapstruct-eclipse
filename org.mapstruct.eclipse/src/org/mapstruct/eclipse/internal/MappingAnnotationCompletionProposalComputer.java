@@ -46,7 +46,7 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
  *
  * @author Lars Wetzer
  */
-public class MapStructCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
+public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
 
     private static final String MAPPING_ANNOTATION_QUALIFIED_NAME = "org.mapstruct.Mapping"; //$NON-NLS-1$
     private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList( "Mappings", "Mapping" ); //$NON-NLS-1$ //$NON-NLS-2$
