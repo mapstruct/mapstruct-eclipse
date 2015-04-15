@@ -28,14 +28,23 @@
       <proposalCategory></proposalCategory>
    </extension>
    <extension
-         id="mapstructCompletionProposalComputer"
+         id="mappingAnnotationCompletionProposalComputer"
          point="org.eclipse.jdt.ui.javaCompletionProposalComputer">
       <javaCompletionProposalComputer
             activate="true"
             categoryId="org.mapstruct.eclipse.mapstructCompletionProposalComputer"
-            class="org.mapstruct.eclipse.internal.MapStructCompletionProposalComputer"
+            class="org.mapstruct.eclipse.internal.MappingAnnotationCompletionProposalComputer"
             needsSortingAfterFiltering="true">
       </javaCompletionProposalComputer>
    </extension>
-
+   <extension
+         id="mapperAnnotationCompletionProposalComputer"
+         point="org.eclipse.jdt.ui.javaCompletionProposalComputer">
+      <javaCompletionProposalComputer
+            activate="true"
+            categoryId="org.mapstruct.eclipse.mapstructCompletionProposalComputer"
+            class="org.mapstruct.eclipse.internal.MapperAnnotationCompletionProposalComputer"
+            needsSortingAfterFiltering="true">
+      </javaCompletionProposalComputer>
+   </extension>
 </plugin>

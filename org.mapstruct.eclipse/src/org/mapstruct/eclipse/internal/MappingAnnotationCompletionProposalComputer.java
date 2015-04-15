@@ -21,42 +21,32 @@ package org.mapstruct.eclipse.internal;
 import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
-import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
-import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
-import org.eclipse.jface.text.contentassist.IContextInformation;
 
 /**
- * Computes MapStruct specific content assist completion proposals.
+ * Computes MapStruct specific content assist completion proposals for the <code>@Mapping</code> annotation.
  *
  * @author Lars Wetzer
  */
-public class MapStructCompletionProposalComputer implements IJavaCompletionProposalComputer {
+public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
 
     private static final String MAPPING_ANNOTATION_QUALIFIED_NAME = "org.mapstruct.Mapping"; //$NON-NLS-1$
     private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList( "Mappings", "Mapping" ); //$NON-NLS-1$ //$NON-NLS-2$
@@ -66,88 +56,13 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
     private static final String SET_PREFIX = "set"; //$NON-NLS-1$
     private static final String IS_PREFIX = "is"; //$NON-NLS-1$
 
-    private static final List<IContextInformation> EMPTY_CONTEXTS = Collections.emptyList();
-    private static final List<ICompletionProposal> EMPTY_PROPOSALS = Collections.emptyList();
-
-    @Override
-    public void sessionStarted() {
-    }
-
-    @Override
-    public void sessionEnded() {
-    }
-
-    @Override
-    public String getErrorMessage() {
-        return null;
-    }
-
-    @Override
-    public List<IContextInformation> computeContextInformation(ContentAssistInvocationContext context,
-                                                               IProgressMonitor monitor) {
-        return EMPTY_CONTEXTS;
-    }
-
-    @Override
-    public List<ICompletionProposal> computeCompletionProposals(ContentAssistInvocationContext context,
-                                                                IProgressMonitor monitor) {
-
-        try {
-
-            if ( !( context instanceof JavaContentAssistInvocationContext ) ) {
-                return EMPTY_PROPOSALS;
-            }
-
-            JavaContentAssistInvocationContext javaContent = (JavaContentAssistInvocationContext) context;
-
-            ICompilationUnit compilationUnit = javaContent.getCompilationUnit();
-
-            if ( compilationUnit == null || !compilationUnit.isStructureKnown() ) {
-                return EMPTY_PROPOSALS;
-            }
-
-            int invocationOffset = javaContent.getInvocationOffset();
-
-            IJavaElement javaElement = compilationUnit.getElementAt( invocationOffset );
-
-            if ( !( javaElement instanceof IMethod ) ) {
-                return EMPTY_PROPOSALS;
-            }
-
-            IMethod method = (IMethod) javaElement;
-
-            for ( IAnnotation annotation : method.getAnnotations() ) {
-
-                if ( MAPPING_ANNOTATION_NAMES.contains( annotation.getElementName() )
-                    && isInRange(
-                        invocationOffset,
-                        annotation.getSourceRange().getOffset(),
-                        annotation.getSourceRange().getLength() ) ) {
-
-                    return parseCompilationUnit(
-                        compilationUnit,
-                        invocationOffset,
-                        String.valueOf( javaContent.getCoreContext().getToken() ) );
-
-                }
-
-            }
-
-        }
-        catch ( Exception e ) {
-            return EMPTY_PROPOSALS;
-        }
-
-        return EMPTY_PROPOSALS;
-
-    }
-
     /**
      * Parses the given {@link ICompilationUnit} and returns {@link ICompletionProposal}s for the given invocation
      * offset and token.
      */
-    private List<ICompletionProposal> parseCompilationUnit(final ICompilationUnit compilationUnit,
-                                                           final int invocationOffset, final String token) {
+    @Override
+    protected List<ICompletionProposal> getProposals(final ICompilationUnit compilationUnit,
+                                                     final int invocationOffset, final String token) {
 
         List<ICompletionProposal> returnValue = new ArrayList<ICompletionProposal>();
 
@@ -257,15 +172,18 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
                     }
 
                     return true;
-
                 }
 
                 return false;
-
             }
 
         };
 
+    }
+
+    @Override
+    protected List<String> getAnnotationNames() {
+        return MAPPING_ANNOTATION_NAMES;
     }
 
     /**
@@ -283,16 +201,6 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
     }
 
     /**
-     * Tests if the given offset is in range specified by the given start position and length.
-     */
-    private boolean isInRange(int offset, int rangeStartPosition, int rangeLength) {
-        if ( rangeStartPosition < offset && offset < rangeStartPosition + rangeLength ) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Decides whether the given {@link MemberValuePair} is a <code>Mapping</code> annotation method.
      */
     private boolean isMappingAnnotationMethod(MemberValuePair node) {
@@ -301,21 +209,6 @@ public class MapStructCompletionProposalComputer implements IJavaCompletionPropo
             return true;
         }
         return false;
-    }
-
-    /**
-     * Returns the qualified name of the annotation which is associated with the given {@link IMemberValuePairBinding}.
-     */
-    private String getAnnotationQualifiedName(IMemberValuePairBinding binding) {
-        IMethodBinding methodBinding = binding.getMethodBinding();
-        if ( methodBinding == null ) {
-            return null;
-        }
-        ITypeBinding declaringClass = methodBinding.getDeclaringClass();
-        if ( declaringClass == null ) {
-            return null;
-        }
-        return declaringClass.getQualifiedName();
     }
 
 }
