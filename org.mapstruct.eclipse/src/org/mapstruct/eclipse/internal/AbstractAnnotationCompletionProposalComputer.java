@@ -35,6 +35,12 @@ import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 
+/**
+ * Base class for completion proposal computers.
+ *
+ * @author Lars Wetzer
+ * @author Stefan Rademacher
+ */
 abstract class AbstractAnnotationCompletionProposalComputer implements IJavaCompletionProposalComputer {
 
     @Override

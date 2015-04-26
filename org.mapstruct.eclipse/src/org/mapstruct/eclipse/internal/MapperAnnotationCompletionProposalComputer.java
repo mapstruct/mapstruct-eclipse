@@ -30,12 +30,14 @@ import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 
 /**
- * Computes MapStruct specific content assist completion proposals for the <code>@Mapper</code> annotation.
+ * Computes MapStruct specific content assist completion proposals for the {@code @Mapper} annotation.
  *
  * @author Stefan Rademacher
  */
 public class MapperAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
+
     private static final List<String> MAPPER_ANNOTATION_NAME = Arrays.asList( "Mapper" );
+
     private static final List<String> COMPONENT_MODEL_TYPES = Collections.unmodifiableList( Arrays.asList(
         "default",
         "cdi",
