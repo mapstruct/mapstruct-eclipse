@@ -68,4 +68,9 @@ public final class MapStructAPIConstants {
      * Member name of Mapping#target()
      */
     public static final String MAPPING_MEMBER_TARGET = "target"; //$NON-NLS-1$
+
+    /**
+     * Member name of Mapping#ignore()
+     */
+    public static final String MAPPING_MEMBER_IGNORE = "ignore"; //$NON-NLS-1$
 }
