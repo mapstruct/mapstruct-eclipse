@@ -48,10 +48,12 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
  */
 public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
 
-    private static final String MAPPING_ANNOTATION_QUALIFIED_NAME = "org.mapstruct.Mapping"; //$NON-NLS-1$
-    private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList( "Mappings", "Mapping" ); //$NON-NLS-1$ //$NON-NLS-2$
-    private static final String SOURCE_ANNOTATION_METHOD = "source"; //$NON-NLS-1$
-    private static final String TARGET_ANNOTATION_METHOD = "target"; //$NON-NLS-1$
+    private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList(
+        MapStructAPIConstants.MAPPING_FQ_NAME,
+        MapStructAPIConstants.MAPPING_SIMPLE_NAME,
+        MapStructAPIConstants.MAPPINGS_SIMPLE_NAME,
+        MapStructAPIConstants.MAPPINGS_FQ_NAME );
+
     private static final String GET_PREFIX = "get"; //$NON-NLS-1$
     private static final String SET_PREFIX = "set"; //$NON-NLS-1$
     private static final String IS_PREFIX = "is"; //$NON-NLS-1$
@@ -138,13 +140,13 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
 
                 String annotationQualifiedName = getAnnotationQualifiedName( node.resolveMemberValuePairBinding() );
 
-                if ( MAPPING_ANNOTATION_QUALIFIED_NAME.equals( annotationQualifiedName )
+                if ( MapStructAPIConstants.MAPPING_FQ_NAME.equals( annotationQualifiedName )
                     && isInRange( invocationOffset, node.getValue().getStartPosition(), node.getValue().getLength() )
                     && isMappingAnnotationMethod( node ) ) {
 
                     isValidValue.set( true );
 
-                    if ( SOURCE_ANNOTATION_METHOD.equals( node.getName().toString() ) ) {
+                    if ( MapStructAPIConstants.MAPPING_MEMBER_SOURCE.equals( node.getName().toString() ) ) {
                         isSource.set( true );
                     }
 
@@ -204,8 +206,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
      * Decides whether the given {@link MemberValuePair} is a <code>Mapping</code> annotation method.
      */
     private boolean isMappingAnnotationMethod(MemberValuePair node) {
-        if ( SOURCE_ANNOTATION_METHOD.equals( node.getName().toString() )
-            || TARGET_ANNOTATION_METHOD.equals( node.getName().toString() ) ) {
+        if ( MapStructAPIConstants.MAPPING_MEMBER_SOURCE.equals( node.getName().toString() )
+            || MapStructAPIConstants.MAPPING_MEMBER_TARGET.equals( node.getName().toString() ) ) {
             return true;
         }
         return false;

@@ -36,7 +36,9 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
  */
 public class MapperAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
 
-    private static final List<String> MAPPER_ANNOTATION_NAME = Arrays.asList( "Mapper" );
+    private static final List<String> MAPPER_ANNOTATION_NAMES = Arrays.asList(
+        MapStructAPIConstants.MAPPER_SIMPLE_NAME,
+        MapStructAPIConstants.MAPPER_FQ_NAME );
 
     private static final List<String> COMPONENT_MODEL_TYPES = Collections.unmodifiableList( Arrays.asList(
         "default",
@@ -46,7 +48,7 @@ public class MapperAnnotationCompletionProposalComputer extends AbstractAnnotati
 
     @Override
     protected List<String> getAnnotationNames() {
-        return MAPPER_ANNOTATION_NAME;
+        return MAPPER_ANNOTATION_NAMES;
     }
 
     @Override
