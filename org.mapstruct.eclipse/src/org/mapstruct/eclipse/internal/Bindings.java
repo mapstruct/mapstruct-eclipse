@@ -18,12 +18,17 @@
  */
 package org.mapstruct.eclipse.internal;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IBinding;
+import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 
 /**
  * Helper class to inspect various {@link IBinding}s.
@@ -39,25 +44,26 @@ public class Bindings {
      * @param type the type
      * @return the method names declared in the class or a super type of it
      */
-    public static Set<String> findAllMethodNames(ITypeBinding type) {
-        Set<String> result = new HashSet<String>();
+    public static Collection<String> findAllMethodNames(ITypeBinding type) {
+        Collection<String> result = new HashSet<String>();
 
         collectMethodNames( type, new HashSet<ITypeBinding>(), result );
 
         return result;
     }
 
-    private static void collectMethodNames(ITypeBinding curr, Set<ITypeBinding> visited, Set<String> methodNames) {
-        if ( !isJavaLangObject( curr ) && visited.add( curr ) ) {
-            for ( IMethodBinding methodBinding : curr.getDeclaredMethods() ) {
+    private static void collectMethodNames(ITypeBinding type, Set<ITypeBinding> visited,
+                                           Collection<String> methodNames) {
+        if ( !isJavaLangObject( type ) && visited.add( type ) ) {
+            for ( IMethodBinding methodBinding : type.getDeclaredMethods() ) {
                 methodNames.add( methodBinding.getName() );
             }
 
-            for ( ITypeBinding ifc : curr.getInterfaces() ) {
+            for ( ITypeBinding ifc : type.getInterfaces() ) {
                 collectMethodNames( ifc, visited, methodNames );
             }
 
-            ITypeBinding superClass = curr.getSuperclass();
+            ITypeBinding superClass = type.getSuperclass();
             if ( superClass != null ) {
                 collectMethodNames( superClass, visited, methodNames );
             }
@@ -66,5 +72,50 @@ public class Bindings {
 
     private static boolean isJavaLangObject(ITypeBinding curr) {
         return curr.getQualifiedName().equals( "java.lang.Object" );
+    }
+
+    /**
+     * @param annotations the annotations
+     * @param annotationName the fully qualified name of the annotation to look for
+     * @return {@code true}, iff the given array of annotations contains an annotation with the given name
+     */
+    public static boolean containsAnnotation(IAnnotationBinding[] annotations, String annotationName) {
+        for ( IAnnotationBinding annotation : annotations ) {
+            if ( annotation.getAnnotationType().getQualifiedName().equals( annotationName ) ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param type the enum type
+     * @return the enum constant names of the given type
+     */
+    public static Collection<String> findAllEnumConstants(ITypeBinding type) {
+        IVariableBinding[] declaredFields = type.getDeclaredFields();
+
+        Collection<String> result = new ArrayList<String>( declaredFields.length );
+
+        for ( IVariableBinding field : declaredFields ) {
+            result.add( field.getName() );
+        }
+
+        return result;
+    }
+
+    /**
+     * Returns the qualified name of the annotation which is associated with the given {@link IMemberValuePairBinding}.
+     */
+    public static String getAnnotationQualifiedName(IMemberValuePairBinding binding) {
+        IMethodBinding methodBinding = binding.getMethodBinding();
+        if ( methodBinding == null ) {
+            return null;
+        }
+        ITypeBinding declaringClass = methodBinding.getDeclaringClass();
+        if ( declaringClass == null ) {
+            return null;
+        }
+        return declaringClass.getQualifiedName();
     }
 }

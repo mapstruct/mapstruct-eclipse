@@ -26,9 +26,6 @@ import org.eclipse.jdt.core.IAnnotatable;
 import org.eclipse.jdt.core.IAnnotation;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.dom.IMemberValuePairBinding;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.ui.text.java.ContentAssistInvocationContext;
 import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
@@ -127,20 +124,4 @@ abstract class AbstractAnnotationCompletionProposalComputer implements IJavaComp
         }
         return false;
     }
-
-    /**
-     * Returns the qualified name of the annotation which is associated with the given {@link IMemberValuePairBinding}.
-     */
-    protected String getAnnotationQualifiedName(IMemberValuePairBinding binding) {
-        IMethodBinding methodBinding = binding.getMethodBinding();
-        if ( methodBinding == null ) {
-            return null;
-        }
-        ITypeBinding declaringClass = methodBinding.getDeclaringClass();
-        if ( declaringClass == null ) {
-            return null;
-        }
-        return declaringClass.getQualifiedName();
-    }
-
 }

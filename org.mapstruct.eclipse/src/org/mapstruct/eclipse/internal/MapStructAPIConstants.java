@@ -73,4 +73,14 @@ public final class MapStructAPIConstants {
      * Member name of Mapping#ignore()
      */
     public static final String MAPPING_MEMBER_IGNORE = "ignore"; //$NON-NLS-1$
+
+    /**
+     * Fully qualified name of the annotation TargetType
+     */
+    public static final String TARGET_TYPE_FQ_NAME = "org.mapstruct.TargetType"; //$NON-NLS-1$
+
+    /**
+     * Fully qualified name of the annotation MappingTarget
+     */
+    public static final String MAPPING_TARGET_FQ_NAME = "org.mapstruct.MappingTarget"; //$NON-NLS-1$
 }

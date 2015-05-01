@@ -21,38 +21,164 @@ package org.mapstruct.eclipse.internal;
 import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.TreeSet;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.IAnnotationBinding;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.MemberValuePair;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SingleVariableDeclaration;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 
+import static org.mapstruct.eclipse.internal.Bindings.containsAnnotation;
+import static org.mapstruct.eclipse.internal.Bindings.findAllMethodNames;
+import static org.mapstruct.eclipse.internal.Bindings.getAnnotationQualifiedName;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_SIMPLE_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_SOURCE;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_TARGET;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_SIMPLE_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_TARGET_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.TARGET_TYPE_FQ_NAME;
+
 /**
  * Computes MapStruct specific content assist completion proposals for the <code>@Mapping</code> annotation.
  *
  * @author Lars Wetzer
+ * @author Andreas Gudian
  */
 public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotationCompletionProposalComputer {
 
+    private final class PropertyNameProposalCollector extends ASTVisitor {
+        private final int invocationOffset;
+
+        private Collection<String> sourceProperties = new TreeSet<String>();
+        private Collection<String> targetProperties = new TreeSet<String>();
+
+        private boolean source = false;
+        private boolean valid = false;
+        private boolean inMethod = false;
+
+        private ITypeBinding resultType;
+        private Map<String, ITypeBinding> sourceNameToType = new HashMap<String, ITypeBinding>();
+
+        private PropertyNameProposalCollector(int invocationOffset) {
+            super( false );
+            this.invocationOffset = invocationOffset;
+        }
+
+        @Override
+        public boolean visit(MemberValuePair node) {
+            String annotationQualifiedName = getAnnotationQualifiedName( node.resolveMemberValuePairBinding() );
+
+            if ( MAPPING_FQ_NAME.equals( annotationQualifiedName )
+                && isInRange( invocationOffset, node.getValue().getStartPosition(), node.getValue().getLength() )
+                && isMappingAnnotationMethod( node ) ) {
+
+                valid = true;
+
+                if ( MAPPING_MEMBER_SOURCE.equals( node.getName().toString() ) ) {
+                    source = true;
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean visit(MethodDeclaration node) {
+            if ( isInRange( invocationOffset, node.getStartPosition(), node.getLength() ) ) {
+                inMethod = true;
+                return true;
+            }
+
+            inMethod = false;
+            return false;
+        }
+
+        @Override
+        public boolean visit(SingleVariableDeclaration node) {
+            IVariableBinding binding = node.resolveBinding();
+            IAnnotationBinding[] annotations = binding.getAnnotations();
+
+            if ( containsAnnotation( annotations, MAPPING_TARGET_FQ_NAME ) ) {
+                resultType = binding.getType();
+            }
+            else if ( !containsAnnotation( annotations, TARGET_TYPE_FQ_NAME ) ) {
+                sourceNameToType.put( node.getName().toString(), binding.getType() );
+            }
+
+            return false;
+        }
+
+        @Override
+        public void endVisit(MethodDeclaration node) {
+            if ( !inMethod ) {
+                return;
+            }
+
+            if ( null == resultType ) {
+                resultType = node.resolveBinding().getReturnType();
+            }
+
+            if ( isEnumMapping() ) {
+                targetProperties.addAll( Bindings.findAllEnumConstants( resultType ) );
+                sourceProperties.addAll( Bindings.findAllEnumConstants( sourceNameToType.values().iterator().next() ) );
+            }
+            else {
+                targetProperties.addAll( findProperties( findAllMethodNames( resultType ), SET_PREFIX ) );
+                if ( sourceNameToType.size() > 1 ) {
+                    sourceProperties.addAll( sourceNameToType.keySet() );
+                }
+                else {
+                    for ( ITypeBinding sourceType : sourceNameToType.values() ) {
+                        Collection<String> methodNames = findAllMethodNames( sourceType );
+                        sourceProperties.addAll( findProperties( methodNames, GET_PREFIX ) );
+                        sourceProperties.addAll( findProperties( methodNames, IS_PREFIX ) );
+                    }
+                }
+            }
+        }
+
+        private boolean isEnumMapping() {
+            return ( sourceNameToType.size() == 1 && sourceNameToType.values().iterator().next().isEnum()
+                            && resultType.isEnum() );
+        }
+
+        public Collection<String> getProperties() {
+            if ( source ) {
+                return sourceProperties;
+            }
+            else {
+                return targetProperties;
+            }
+        }
+
+        public boolean isValidValue() {
+            return valid;
+        }
+    }
+
     private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList(
-        MapStructAPIConstants.MAPPING_FQ_NAME,
-        MapStructAPIConstants.MAPPING_SIMPLE_NAME,
-        MapStructAPIConstants.MAPPINGS_SIMPLE_NAME,
-        MapStructAPIConstants.MAPPINGS_FQ_NAME );
+        MAPPING_FQ_NAME,
+        MAPPING_SIMPLE_NAME,
+        MAPPINGS_SIMPLE_NAME,
+        MAPPINGS_FQ_NAME );
 
     private static final String GET_PREFIX = "get"; //$NON-NLS-1$
     private static final String SET_PREFIX = "set"; //$NON-NLS-1$
@@ -73,29 +199,14 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         parser.setSource( compilationUnit );
         parser.setResolveBindings( true );
 
-        AtomicBoolean isValidValue = new AtomicBoolean( false );
-        AtomicBoolean isSource = new AtomicBoolean( false );
-
-        Set<String> sourceProperties = new TreeSet<String>();
-        Set<String> targetProperties = new TreeSet<String>();
-
         ASTNode astNode = parser.createAST( null );
 
-        ASTVisitor astVisitor =
-            createVisitor( invocationOffset, isValidValue, isSource, sourceProperties, targetProperties );
+        PropertyNameProposalCollector astVisitor = new PropertyNameProposalCollector( invocationOffset );
 
         astNode.accept( astVisitor );
 
-        if ( isValidValue.get() ) {
-
-            Set<String> propertiesToProcess;
-
-            if ( isSource.get() ) {
-                propertiesToProcess = sourceProperties;
-            }
-            else {
-                propertiesToProcess = targetProperties;
-            }
+        if ( astVisitor.isValidValue() ) {
+            Collection<String> propertiesToProcess = astVisitor.getProperties();
 
             for ( String property : propertiesToProcess ) {
 
@@ -125,64 +236,6 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         return returnValue;
     }
 
-    /**
-     * Creates an {@link ASTVisitor} that discovers all properties for a <code>Mapping</code>'s <code>source</code> and
-     * <code>target</code> method for the given invocation offset.
-     */
-    private ASTVisitor createVisitor(final int invocationOffset, final AtomicBoolean isValidValue,
-                                     final AtomicBoolean isSource, final Set<String> sourceProperties,
-                                     final Set<String> targetProperties) {
-
-        return new ASTVisitor( false ) {
-
-            @Override
-            public boolean visit(MemberValuePair node) {
-
-                String annotationQualifiedName = getAnnotationQualifiedName( node.resolveMemberValuePairBinding() );
-
-                if ( MapStructAPIConstants.MAPPING_FQ_NAME.equals( annotationQualifiedName )
-                    && isInRange( invocationOffset, node.getValue().getStartPosition(), node.getValue().getLength() )
-                    && isMappingAnnotationMethod( node ) ) {
-
-                    isValidValue.set( true );
-
-                    if ( MapStructAPIConstants.MAPPING_MEMBER_SOURCE.equals( node.getName().toString() ) ) {
-                        isSource.set( true );
-                    }
-
-                }
-
-                return false;
-
-            }
-
-            @Override
-            public boolean visit(MethodDeclaration node) {
-
-                if ( isInRange( invocationOffset, node.getStartPosition(), node.getLength() ) ) {
-
-                    IMethodBinding binding = node.resolveBinding();
-
-                    ITypeBinding returnType = binding.getReturnType();
-                    targetProperties.addAll( findProperties( Bindings.findAllMethodNames( returnType ), SET_PREFIX ) );
-
-                    ITypeBinding[] parameterTypes = binding.getParameterTypes();
-                    if ( parameterTypes.length == 1 ) {
-                        Set<String> methodNames = Bindings.findAllMethodNames( parameterTypes[0] );
-                        sourceProperties.addAll( findProperties( methodNames, GET_PREFIX ) );
-                        sourceProperties.addAll( findProperties( methodNames, IS_PREFIX ) );
-                    }
-
-                    return true;
-                }
-
-                return false;
-            }
-
-        };
-
-    }
-
     @Override
     protected List<String> getAnnotationNames() {
         return MAPPING_ANNOTATION_NAMES;
@@ -191,8 +244,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
     /**
      * Finds {@link IMethodBinding}s starting with the given prefix and extracts the associated property name from it.
      */
-    private Set<String> findProperties(Set<String> methodNames, String methodPrefix) {
-        Set<String> returnValue = new HashSet<String>();
+    private Collection<String> findProperties(Collection<String> methodNames, String methodPrefix) {
+        Collection<String> returnValue = new ArrayList<String>();
         for ( String methodName : methodNames ) {
             if ( methodName.startsWith( methodPrefix ) ) {
                 String propertyName = methodName.substring( methodPrefix.length() );
@@ -206,8 +259,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
      * Decides whether the given {@link MemberValuePair} is a <code>Mapping</code> annotation method.
      */
     private boolean isMappingAnnotationMethod(MemberValuePair node) {
-        if ( MapStructAPIConstants.MAPPING_MEMBER_SOURCE.equals( node.getName().toString() )
-            || MapStructAPIConstants.MAPPING_MEMBER_TARGET.equals( node.getName().toString() ) ) {
+        if ( MAPPING_MEMBER_SOURCE.equals( node.getName().toString() )
+            || MAPPING_MEMBER_TARGET.equals( node.getName().toString() ) ) {
             return true;
         }
         return false;
