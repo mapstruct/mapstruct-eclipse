@@ -23,7 +23,7 @@ import org.osgi.framework.BundleContext;
 
 /**
  * The activator class controls the plug-in life cycle.
- * 
+ *
  * @author Lars Wetzer
  */
 public class MapStructPlugIn extends AbstractUIPlugin {
@@ -35,11 +35,13 @@ public class MapStructPlugIn extends AbstractUIPlugin {
     public MapStructPlugIn() {
     }
 
+    @Override
     public void start(BundleContext context) throws Exception {
         super.start( context );
         plugin = this;
     }
 
+    @Override
     public void stop(BundleContext context) throws Exception {
         plugin = null;
         super.stop( context );

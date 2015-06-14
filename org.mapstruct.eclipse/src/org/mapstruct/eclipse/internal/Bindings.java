@@ -32,6 +32,9 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
  */
 public class Bindings {
 
+    private Bindings() {
+    }
+
     /**
      * @param type the type
      * @return the method names declared in the class or a super type of it

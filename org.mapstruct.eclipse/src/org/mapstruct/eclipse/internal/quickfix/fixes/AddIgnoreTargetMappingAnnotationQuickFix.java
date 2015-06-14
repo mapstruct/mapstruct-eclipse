@@ -167,10 +167,11 @@ public class AddIgnoreTargetMappingAnnotationQuickFix extends MapStructQuickFix 
                     return true;
                 }
             }
-
         }
         catch ( CoreException e ) {
+            return false;
         }
+
         return false;
     }
 
