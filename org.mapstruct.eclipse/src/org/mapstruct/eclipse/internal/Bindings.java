@@ -21,6 +21,7 @@ package org.mapstruct.eclipse.internal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
@@ -44,8 +45,8 @@ public class Bindings {
      * @param type the type
      * @return the method names declared in the class or a super type of it
      */
-    public static Collection<String> findAllMethodNames(ITypeBinding type) {
-        Collection<String> result = new HashSet<String>();
+    public static Set<String> findAllMethodNames(ITypeBinding type) {
+        Set<String> result = new HashSet<String>();
 
         collectMethodNames( type, new HashSet<ITypeBinding>(), result );
 
@@ -92,10 +93,10 @@ public class Bindings {
      * @param type the enum type
      * @return the enum constant names of the given type
      */
-    public static Collection<String> findAllEnumConstants(ITypeBinding type) {
+    public static List<String> findAllEnumConstants(ITypeBinding type) {
         IVariableBinding[] declaredFields = type.getDeclaredFields();
 
-        Collection<String> result = new ArrayList<String>( declaredFields.length );
+        List<String> result = new ArrayList<String>( declaredFields.length );
 
         for ( IVariableBinding field : declaredFields ) {
             result.add( field.getName() );

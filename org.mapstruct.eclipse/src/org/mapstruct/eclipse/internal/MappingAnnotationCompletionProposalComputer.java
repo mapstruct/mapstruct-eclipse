@@ -244,8 +244,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
     /**
      * Finds {@link IMethodBinding}s starting with the given prefix and extracts the associated property name from it.
      */
-    private Collection<String> findProperties(Collection<String> methodNames, String methodPrefix) {
-        Collection<String> returnValue = new ArrayList<String>();
+    private List<String> findProperties(Collection<String> methodNames, String methodPrefix) {
+        List<String> returnValue = new ArrayList<String>();
         for ( String methodName : methodNames ) {
             if ( methodName.startsWith( methodPrefix ) ) {
                 String propertyName = methodName.substring( methodPrefix.length() );
