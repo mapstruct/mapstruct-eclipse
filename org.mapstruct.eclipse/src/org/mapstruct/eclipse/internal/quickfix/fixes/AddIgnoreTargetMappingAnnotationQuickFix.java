@@ -20,6 +20,7 @@ package org.mapstruct.eclipse.internal.quickfix.fixes;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -135,7 +136,7 @@ public class AddIgnoreTargetMappingAnnotationQuickFix extends MapStructQuickFix 
         mappings.setValue( mappingArray );
 
         ListRewrite annotations = rewrite.getListRewrite( method, MethodDeclaration.MODIFIERS2_PROPERTY );
-        annotations.insertLast( mappings, null );
+        annotations.insertFirst( mappings, null );
 
         addImportIfRequired( unit, rewrite, MAPPINGS_FQ_NAME );
 
@@ -177,6 +178,7 @@ public class AddIgnoreTargetMappingAnnotationQuickFix extends MapStructQuickFix 
 
     @SuppressWarnings("unchecked")
     private void addMappingAnnotations(Collection<String> properties, AST ast, ListRewrite mappingList) {
+        LinkedList<NormalAnnotation> toAdd = new LinkedList<NormalAnnotation>();
         for ( String property : properties ) {
             NormalAnnotation mapping = ast.newNormalAnnotation();
             mapping.setTypeName( ast.newName( MAPPING_SIMPLE_NAME ) );
@@ -195,7 +197,11 @@ public class AddIgnoreTargetMappingAnnotationQuickFix extends MapStructQuickFix 
             valuePair.setValue( ast.newBooleanLiteral( true ) );
             mapping.values().add( valuePair );
 
-            mappingList.insertLast( mapping, null );
+            toAdd.addFirst( mapping );
+        }
+
+        for ( NormalAnnotation mapping : toAdd ) {
+            mappingList.insertFirst( mapping, null );
         }
     }
 
