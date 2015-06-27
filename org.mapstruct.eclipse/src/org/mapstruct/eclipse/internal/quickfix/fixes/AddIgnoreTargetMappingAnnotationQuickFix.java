@@ -18,11 +18,16 @@
  */
 package org.mapstruct.eclipse.internal.quickfix.fixes;
 
-import java.util.Arrays;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_SIMPLE_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_IGNORE;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_TARGET;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_SIMPLE_NAME;
+
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.CoreException;
@@ -44,41 +49,46 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.mapstruct.eclipse.internal.quickfix.MapStructQuickFix;
 import org.mapstruct.eclipse.internal.quickfix.visitors.FindAnnotationByNameVisitor;
 
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_FQ_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_SIMPLE_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_FQ_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_IGNORE;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_TARGET;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_SIMPLE_NAME;
-
 /**
- * Quick fix for error/warning "Unmapped target property" / "Unmapped target properties" that adds
- * {@code @Mapping( target = "<property>", ignore = true)} to the method.
+ * Quick fix that adds {@code @Mapping( target = "<property>", ignore = true)} to the method.
  *
  * @author Andreas Gudian
  */
 public class AddIgnoreTargetMappingAnnotationQuickFix extends MapStructQuickFix {
 
-    public AddIgnoreTargetMappingAnnotationQuickFix() {
-        super( "Ignore unmapped target properties" );
+    private final List<String> properties;
+
+    public AddIgnoreTargetMappingAnnotationQuickFix(List<String> properties) {
+        this.properties = properties;
     }
 
     @Override
-    public boolean canFix(IMarker marker) {
-        String message = getMessage( marker );
+    public String getLabel() {
+        String suffix = ( properties.size() > 1 ? "ies." : "y " + properties.get( 0 ) );
 
-        return message.startsWith( "Unmapped target property:" )
-            || message.startsWith( "Unmapped target properties:" );
+        return "Ignore unmapped target propert" + suffix;
+    }
+
+    @Override
+    public String getDescription() {
+        String suffix = ( properties.size() > 1 ? "ies." : "y " + properties.get( 0 ) );
+
+        StringBuilder sb = new StringBuilder( "<html>Ignore target propert" );
+
+        sb.append( suffix );
+        sb.append( "<br><br>" );
+
+        for ( String prop : properties ) {
+            sb.append( "<b>@Mapping( target = \"" ).append( prop ).append( "\", ignore = true )</b><br>" );
+        }
+
+        sb.append( "</html>" );
+
+        return sb.toString();
     }
 
     @Override
     protected ASTRewrite getASTRewrite(CompilationUnit unit, ASTNode nodeWithMarker, IMarker marker) {
-        Collection<String> properties = extractPropertiesFromMessage( getMessage( marker ) );
-
-        if ( properties == null ) {
-            return null;
-        }
-
         AST ast = unit.getAST();
 
         ASTRewrite rewrite = ASTRewrite.create( ast );
@@ -203,15 +213,5 @@ public class AddIgnoreTargetMappingAnnotationQuickFix extends MapStructQuickFix 
         for ( NormalAnnotation mapping : toAdd ) {
             mappingList.insertFirst( mapping, null );
         }
-    }
-
-    private static Collection<String> extractPropertiesFromMessage(String msg) {
-        Pattern p = Pattern.compile( "Unmapped target (property|properties): \"([^\"]+)\"." );
-        Matcher matcher = p.matcher( msg );
-        if ( matcher.matches() ) {
-            String props = matcher.group( 2 );
-            return Arrays.asList( props.split( ", " ) );
-        }
-        return null;
     }
 }

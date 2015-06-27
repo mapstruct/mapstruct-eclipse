@@ -52,16 +52,6 @@ import org.mapstruct.eclipse.internal.quickfix.visitors.FindMethodByPositionVisi
  */
 @SuppressWarnings("restriction")
 public abstract class MapStructQuickFix implements IMarkerResolution2 {
-    private String label;
-
-    protected MapStructQuickFix(String label) {
-        this.label = label;
-    }
-
-    @Override
-    public String getLabel() {
-        return label;
-    }
 
     @Override
     public void run(IMarker marker) {
@@ -70,7 +60,7 @@ public abstract class MapStructQuickFix implements IMarkerResolution2 {
             IResource resource = marker.getResource();
             IJavaElement javaElement = JavaCore.create( resource );
 
-            compilationUnit = (ICompilationUnit) javaElement.getAdapter( ICompilationUnit.class );
+            compilationUnit = javaElement.getAdapter( ICompilationUnit.class );
             IEditorInput input = EditorUtility.getEditorInput( compilationUnit );
             if ( input != null ) {
                 CompilationUnit astCompilationUnit = toAST( compilationUnit );
@@ -178,21 +168,6 @@ public abstract class MapStructQuickFix implements IMarkerResolution2 {
     @Override
     public Image getImage() {
         return JavaPluginImages.get( JavaPluginImages.IMG_CORRECTION_CHANGE );
-    }
-
-    public abstract boolean canFix(IMarker marker);
-
-    /**
-     * @param marker the marker
-     * @return the message of the marker, or an empty string in case the message cannot be retrieved
-     */
-    protected static String getMessage(IMarker marker) {
-        try {
-            return (String) marker.getAttribute( IMarker.MESSAGE );
-        }
-        catch ( CoreException e ) {
-            return "";
-        }
     }
 
     private static CompilationUnit toAST(ICompilationUnit unit) {
