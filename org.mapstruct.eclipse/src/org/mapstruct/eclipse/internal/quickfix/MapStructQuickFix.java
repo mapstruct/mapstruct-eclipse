@@ -30,6 +30,7 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
+import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
@@ -60,7 +61,7 @@ public abstract class MapStructQuickFix implements IMarkerResolution2 {
             IResource resource = marker.getResource();
             IJavaElement javaElement = JavaCore.create( resource );
 
-            compilationUnit = javaElement.getAdapter( ICompilationUnit.class );
+            compilationUnit = (ICompilationUnit) javaElement.getAdapter( ICompilationUnit.class );
             IEditorInput input = EditorUtility.getEditorInput( compilationUnit );
             if ( input != null ) {
                 CompilationUnit astCompilationUnit = toAST( compilationUnit );
@@ -141,13 +142,28 @@ public abstract class MapStructQuickFix implements IMarkerResolution2 {
      * @param fullyQualifiedName the fully qualified name of the type to add an import for
      */
     protected void addImportIfRequired(CompilationUnit compilationUnit, ASTRewrite rewrite, String fullyQualifiedName) {
-        if ( !hasImport( compilationUnit, fullyQualifiedName ) ) {
+        if ( !hasImport( compilationUnit, fullyQualifiedName )
+            && requiresImport( compilationUnit, fullyQualifiedName ) ) {
             AST ast = compilationUnit.getAST();
             ImportDeclaration declaration = ast.newImportDeclaration();
             declaration.setName( ast.newName( fullyQualifiedName ) );
 
             rewrite.getListRewrite( compilationUnit, CompilationUnit.IMPORTS_PROPERTY ).insertLast( declaration, null );
         }
+    }
+
+    private static boolean requiresImport(CompilationUnit compilationUnit, String fullyQualifiedName) {
+        if ( isPrimitive( fullyQualifiedName )
+            || fullyQualifiedName.startsWith( "java.lang." ) ) {
+            return false;
+        }
+
+        if ( compilationUnit.getPackage().getName().getFullyQualifiedName()
+                            .equals( toSimpleName( fullyQualifiedName ) ) ) {
+            return false;
+        }
+
+        return true;
     }
 
     private static boolean hasImport(CompilationUnit compilationUnit, String fullyQualifiedName) {
@@ -158,6 +174,34 @@ public abstract class MapStructQuickFix implements IMarkerResolution2 {
             }
         }
         return false;
+    }
+
+    protected static String toSimpleName(String fqTypeName) {
+        int lastIndex = fqTypeName.lastIndexOf( '.' );
+        if ( lastIndex >= 0 ) {
+            return fqTypeName.substring( lastIndex + 1 );
+        }
+        return fqTypeName;
+    }
+
+    protected static String capitalize(String string) {
+        return firstChar( string ).toUpperCase() + afterFirstChar( string );
+    }
+
+    protected static String uncapitalize(String string) {
+        return firstChar( string ).toLowerCase() + afterFirstChar( string );
+    }
+
+    private static String firstChar(String string) {
+        return string.length() > 0 ? string.substring( 0, 1 ) : "";
+    }
+
+    private static String afterFirstChar(String string) {
+        return string.length() > 1 ? string.substring( 1 ) : "";
+    }
+
+    protected static boolean isPrimitive(String type) {
+        return null != PrimitiveType.toCode( type );
     }
 
     @Override

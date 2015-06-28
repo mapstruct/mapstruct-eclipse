@@ -27,6 +27,7 @@ import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.ui.IMarkerResolution;
 import org.eclipse.ui.IMarkerResolutionGenerator;
+import org.mapstruct.eclipse.internal.quickfix.factories.CantMapPropertyQFFactory;
 import org.mapstruct.eclipse.internal.quickfix.factories.UnmappedTargetPropertyQFFactory;
 
 /**
@@ -67,7 +68,8 @@ public class MapStructMarkerResolutionGenerator implements IMarkerResolutionGene
 
     private static Collection<? extends QuickFixFactory> allQuickFixFactories() {
         return Arrays.asList(
-            new UnmappedTargetPropertyQFFactory()
+            new UnmappedTargetPropertyQFFactory(),
+            new CantMapPropertyQFFactory()
                      );
     }
 }
