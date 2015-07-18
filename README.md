@@ -13,10 +13,10 @@ Eclipse update site for latest snapshot: https://mapstruct.ci.cloudbees.com/job/
 ### Quick-Fixes
 
 * Quick-Fixes for error/warning message `"Unmapped target property: ..."`:
-** _Ignore unmapped target property_ adds `@Mapping( target = "prop", ignore = true )` to the method
+  * _Ignore unmapped target property_ adds `@Mapping( target = "prop", ignore = true )` to the method
 * Quick-Fixes for error message `"Can't map property X prop to Y prop. Consider to declare/implement a mapping method ..."`:
-** _Add method: Y toY(X prop)_ adds an appropriate method declaration to the mapper.
-** _Ignore unmapped target property_ adds `@Mapping( target = "prop", ignore = true )` to the method.
+  * _Add method: Y toY(X prop)_ adds an appropriate method declaration to the mapper.
+  * _Ignore unmapped target property_ adds `@Mapping( target = "prop", ignore = true )` to the method.
 
 ## Links
 
