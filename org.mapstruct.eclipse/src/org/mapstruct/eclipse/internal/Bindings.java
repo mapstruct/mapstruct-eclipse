@@ -20,6 +20,7 @@ package org.mapstruct.eclipse.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -94,6 +95,10 @@ public class Bindings {
      * @return the enum constant names of the given type
      */
     public static List<String> findAllEnumConstants(ITypeBinding type) {
+        if ( !type.isEnum() ) {
+            return Collections.emptyList();
+        }
+
         IVariableBinding[] declaredFields = type.getDeclaredFields();
 
         List<String> result = new ArrayList<String>( declaredFields.length );

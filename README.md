@@ -7,7 +7,8 @@ Eclipse update site for latest snapshot: https://mapstruct.ci.cloudbees.com/job/
 
 ### Code-Completions
 
-* Completion of `target` and `source` properties in `@Mapping` annotation for bean mappings and for enum mappings
+* Completion of `target` and `source` properties in `@Mapping` annotation for bean mappings
+* Completion of `target` and `source` enum constants in `@ValueMapping` annotations for enum mappings
 * Completion of `componentModel` values in `@Mapper` annotation
 
 ### Quick-Fixes

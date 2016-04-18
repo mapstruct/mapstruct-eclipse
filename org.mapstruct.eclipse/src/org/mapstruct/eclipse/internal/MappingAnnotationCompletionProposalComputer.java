@@ -18,6 +18,20 @@
  */
 package org.mapstruct.eclipse.internal;
 
+import static org.mapstruct.eclipse.internal.Bindings.containsAnnotation;
+import static org.mapstruct.eclipse.internal.Bindings.findAllMethodNames;
+import static org.mapstruct.eclipse.internal.Bindings.getAnnotationQualifiedName;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_SIMPLE_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_SOURCE;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_TARGET;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_SIMPLE_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_TARGET_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.TARGET_TYPE_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.VALUE_MAPPING_FQ_NAME;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.VALUE_MAPPING_SIMPLE_NAME;
+
 import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,18 +57,6 @@ import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
-
-import static org.mapstruct.eclipse.internal.Bindings.containsAnnotation;
-import static org.mapstruct.eclipse.internal.Bindings.findAllMethodNames;
-import static org.mapstruct.eclipse.internal.Bindings.getAnnotationQualifiedName;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_FQ_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_SIMPLE_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_FQ_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_SOURCE;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_MEMBER_TARGET;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_SIMPLE_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_TARGET_FQ_NAME;
-import static org.mapstruct.eclipse.internal.MapStructAPIConstants.TARGET_TYPE_FQ_NAME;
 
 /**
  * Computes MapStruct specific content assist completion proposals for the <code>@Mapping</code> annotation.
@@ -86,18 +88,21 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         public boolean visit(MemberValuePair node) {
             String annotationQualifiedName = getAnnotationQualifiedName( node.resolveMemberValuePairBinding() );
 
-            if ( MAPPING_FQ_NAME.equals( annotationQualifiedName )
+            if ( isSupportedAnnotation( annotationQualifiedName )
                 && isInRange( invocationOffset, node.getValue().getStartPosition(), node.getValue().getLength() )
-                && isMappingAnnotationMethod( node ) ) {
+                && ( isSourceNode( node ) || isTargetNode( node ) ) ) {
 
                 valid = true;
 
-                if ( MAPPING_MEMBER_SOURCE.equals( node.getName().toString() ) ) {
-                    source = true;
-                }
+                source = isSourceNode( node );
             }
 
             return false;
+        }
+
+        private boolean isSupportedAnnotation(String annotationQualifiedName) {
+            return MAPPING_FQ_NAME.equals( annotationQualifiedName )
+                || VALUE_MAPPING_FQ_NAME.equals( annotationQualifiedName );
         }
 
         @Override
@@ -156,8 +161,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         }
 
         private boolean isEnumMapping() {
-            return ( sourceNameToType.size() == 1 && sourceNameToType.values().iterator().next().isEnum()
-                            && resultType.isEnum() );
+            return ( ( sourceNameToType.size() == 1 && sourceNameToType.values().iterator().next().isEnum() )
+                || resultType.isEnum() );
         }
 
         public Collection<String> getProperties() {
@@ -178,7 +183,9 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         MAPPING_FQ_NAME,
         MAPPING_SIMPLE_NAME,
         MAPPINGS_SIMPLE_NAME,
-        MAPPINGS_FQ_NAME );
+        MAPPINGS_FQ_NAME,
+        VALUE_MAPPING_FQ_NAME,
+        VALUE_MAPPING_SIMPLE_NAME );
 
     private static final String GET_PREFIX = "get"; //$NON-NLS-1$
     private static final String SET_PREFIX = "set"; //$NON-NLS-1$
@@ -255,15 +262,11 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         return returnValue;
     }
 
-    /**
-     * Decides whether the given {@link MemberValuePair} is a <code>Mapping</code> annotation method.
-     */
-    private boolean isMappingAnnotationMethod(MemberValuePair node) {
-        if ( MAPPING_MEMBER_SOURCE.equals( node.getName().toString() )
-            || MAPPING_MEMBER_TARGET.equals( node.getName().toString() ) ) {
-            return true;
-        }
-        return false;
+    private boolean isTargetNode(MemberValuePair node) {
+        return MAPPING_MEMBER_TARGET.equals( node.getName().toString() );
     }
 
+    private boolean isSourceNode(MemberValuePair node) {
+        return MAPPING_MEMBER_SOURCE.equals( node.getName().toString() );
+    }
 }

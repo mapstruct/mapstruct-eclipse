@@ -45,15 +45,27 @@ public final class MapStructAPIConstants {
      * Simple name of the annotation Mapping
      */
     public static final String MAPPING_SIMPLE_NAME = "Mapping"; //$NON-NLS-1$
+
+    /**
+     * Simple name of the annotation ValueMapping
+     */
+    public static final String VALUE_MAPPING_SIMPLE_NAME = "ValueMapping"; //$NON-NLS-1$
+
     /**
      * Fully qualified name of the annotation Mapping
      */
     public static final String MAPPING_FQ_NAME = ORG_MAPSTRUCT + MAPPING_SIMPLE_NAME;
 
     /**
+     * Fully qualified name of the annotation ValueMapping
+     */
+    public static final String VALUE_MAPPING_FQ_NAME = ORG_MAPSTRUCT + VALUE_MAPPING_SIMPLE_NAME;
+
+    /**
      * Simple name of the annotation Mappings
      */
     public static final String MAPPINGS_SIMPLE_NAME = "Mappings"; //$NON-NLS-1$
+
     /**
      * Fully qualified name of the annotation Mappings
      */
