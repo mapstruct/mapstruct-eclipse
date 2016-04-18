@@ -19,6 +19,20 @@ Eclipse update site for latest snapshot: https://mapstruct.ci.cloudbees.com/job/
   * _Add method: Y toY(X prop)_ adds an appropriate method declaration to the mapper.
   * _Ignore unmapped target property_ adds `@Mapping( target = "prop", ignore = true )` to the method.
 
+## Screenshots
+
+#### Completion for Properties and Enum Constants
+
+  ![Code completion for properties and enum constants](https://raw.githubusercontent.com/mapstruct/mapstruct-eclipse/master/still-completion-1.png)
+
+#### Quick Fix to Add Missing Property Mapping Method
+
+  ![Quick Fix to add missing property mapping method](https://raw.githubusercontent.com/mapstruct/mapstruct-eclipse/master/still-quickfix-1.png)
+
+#### Quick Fix to Ignore an Unmapped Property
+
+  ![Quick Fix to ignore an unmapped property](https://raw.githubusercontent.com/mapstruct/mapstruct-eclipse/master/still-quickfix-2.png)
+
 ## Links
 
 * [Homepage](http://mapstruct.org)
