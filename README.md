@@ -1,7 +1,11 @@
 # mapstruct-eclipse
 An Eclipse plug-in for working with MapStruct
 
-Eclipse update site for latest snapshot: https://mapstruct.ci.cloudbees.com/job/mapstruct-eclipse/lastSuccessfulBuild/artifact/org.mapstruct.eclipse.repository/target/repository/
+## Eclipse Update Site
+
+* For latest released version: https://dl.bintray.com/mapstruct/mapstruct-eclipse-site/
+* For latest snapshot: https://mapstruct.ci.cloudbees.com/job/mapstruct-eclipse/lastSuccessfulBuild/artifact/org.mapstruct.eclipse.repository/target/repository/
+
 
 ## Current Features
 

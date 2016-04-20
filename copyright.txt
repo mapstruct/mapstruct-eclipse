@@ -1,5 +1,7 @@
 Contributors
 ============
 
+Andreas Gudian
 Gunnar Morling
+Stefan Rademacher
 Lars Wetzer
