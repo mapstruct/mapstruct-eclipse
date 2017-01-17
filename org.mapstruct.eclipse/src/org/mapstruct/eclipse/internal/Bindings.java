@@ -44,30 +44,30 @@ public class Bindings {
 
     /**
      * @param type the type
-     * @return the method names declared in the class or a super type of it
+     * @return the methods declared in the class or a super type of it
      */
-    public static Set<String> findAllMethodNames(ITypeBinding type) {
-        Set<String> result = new HashSet<String>();
+    public static Set<IMethodBinding> findAllMethods(ITypeBinding type) {
+        Set<IMethodBinding> result = new HashSet<IMethodBinding>();
 
-        collectMethodNames( type, new HashSet<ITypeBinding>(), result );
+        collectMethods( type, new HashSet<ITypeBinding>(), result );
 
         return result;
     }
 
-    private static void collectMethodNames(ITypeBinding type, Set<ITypeBinding> visited,
-                                           Collection<String> methodNames) {
+    private static void collectMethods(ITypeBinding type, Set<ITypeBinding> visited,
+                                       Collection<IMethodBinding> methods) {
         if ( !isJavaLangObject( type ) && visited.add( type ) ) {
             for ( IMethodBinding methodBinding : type.getDeclaredMethods() ) {
-                methodNames.add( methodBinding.getName() );
+                methods.add( methodBinding );
             }
 
             for ( ITypeBinding ifc : type.getInterfaces() ) {
-                collectMethodNames( ifc, visited, methodNames );
+                collectMethods( ifc, visited, methods );
             }
 
             ITypeBinding superClass = type.getSuperclass();
             if ( superClass != null ) {
-                collectMethodNames( superClass, visited, methodNames );
+                collectMethods( superClass, visited, methods );
             }
         }
     }

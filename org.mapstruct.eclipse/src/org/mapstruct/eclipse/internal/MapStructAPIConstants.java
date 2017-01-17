@@ -95,4 +95,9 @@ public final class MapStructAPIConstants {
      * Fully qualified name of the annotation MappingTarget
      */
     public static final String MAPPING_TARGET_FQ_NAME = "org.mapstruct.MappingTarget"; //$NON-NLS-1$
+
+    /**
+     * Fully qualified name of the annotation Context
+     */
+    public static final String CONTEXT_FQ_NAME = "org.mapstruct.Context"; //$NON-NLS-1$
 }

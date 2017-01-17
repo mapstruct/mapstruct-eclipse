@@ -19,8 +19,8 @@
 package org.mapstruct.eclipse.internal;
 
 import static org.mapstruct.eclipse.internal.Bindings.containsAnnotation;
-import static org.mapstruct.eclipse.internal.Bindings.findAllMethodNames;
 import static org.mapstruct.eclipse.internal.Bindings.getAnnotationQualifiedName;
+import static org.mapstruct.eclipse.internal.MapStructAPIConstants.CONTEXT_FQ_NAME;
 import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_FQ_NAME;
 import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPINGS_SIMPLE_NAME;
 import static org.mapstruct.eclipse.internal.MapStructAPIConstants.MAPPING_FQ_NAME;
@@ -36,7 +36,9 @@ import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -68,9 +70,9 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
 
     private final class PropertyNameProposalCollector extends ASTVisitor {
         private final int invocationOffset;
+        private final String givenPrefix;
 
-        private Collection<String> sourceProperties = new TreeSet<String>();
-        private Collection<String> targetProperties = new TreeSet<String>();
+        private Collection<String> proposedProperties = new TreeSet<String>();
 
         private boolean source = false;
         private boolean valid = false;
@@ -78,10 +80,12 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
 
         private ITypeBinding resultType;
         private Map<String, ITypeBinding> sourceNameToType = new HashMap<String, ITypeBinding>();
+        private String proposalPrefix;
 
-        private PropertyNameProposalCollector(int invocationOffset) {
+        private PropertyNameProposalCollector(int invocationOffset, String givenPrefix) {
             super( false );
             this.invocationOffset = invocationOffset;
+            this.givenPrefix = givenPrefix;
         }
 
         @Override
@@ -124,7 +128,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
             if ( containsAnnotation( annotations, MAPPING_TARGET_FQ_NAME ) ) {
                 resultType = binding.getType();
             }
-            else if ( !containsAnnotation( annotations, TARGET_TYPE_FQ_NAME ) ) {
+            else if ( !containsAnnotation( annotations, TARGET_TYPE_FQ_NAME )
+                && !containsAnnotation( annotations, CONTEXT_FQ_NAME ) ) {
                 sourceNameToType.put( node.getName().toString(), binding.getType() );
             }
 
@@ -137,46 +142,149 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
                 return;
             }
 
-            if ( null == resultType ) {
-                resultType = node.resolveBinding().getReturnType();
-            }
-
-            if ( isEnumMapping() ) {
-                targetProperties.addAll( Bindings.findAllEnumConstants( resultType ) );
-                sourceProperties.addAll( Bindings.findAllEnumConstants( sourceNameToType.values().iterator().next() ) );
+            String pathWithoutLastElement = getPathWithoutLastElement( givenPrefix );
+            Deque<String> pathToProposedType;
+            if ( pathWithoutLastElement.isEmpty() ) {
+                pathToProposedType = new LinkedList<String>();
+                proposalPrefix = "";
             }
             else {
-                targetProperties.addAll( findProperties( findAllMethodNames( resultType ), SET_PREFIX ) );
+                pathToProposedType = new LinkedList<String>( Arrays.asList( pathWithoutLastElement.split( "\\." ) ) );
+                proposalPrefix = pathWithoutLastElement + ".";
+            }
+
+            String propertyPrefix = getLastPathElement( givenPrefix );
+
+            ITypeBinding proposalType = getTypeForPropertyProposals( node, pathToProposedType, propertyPrefix );
+
+            if ( proposalType != null ) {
+                proposePropertiesIfPrefixMatches(
+                    propertyPrefix,
+                    proposalType );
+            }
+        }
+
+        private ITypeBinding getTypeForPropertyProposals(MethodDeclaration node, Deque<String> pathToProposedType,
+                                                         String propertyPrefix) {
+            ITypeBinding proposalType;
+            if ( source ) {
                 if ( sourceNameToType.size() > 1 ) {
-                    sourceProperties.addAll( sourceNameToType.keySet() );
-                }
-                else {
-                    for ( ITypeBinding sourceType : sourceNameToType.values() ) {
-                        Collection<String> methodNames = findAllMethodNames( sourceType );
-                        sourceProperties.addAll( findProperties( methodNames, GET_PREFIX ) );
-                        sourceProperties.addAll( findProperties( methodNames, IS_PREFIX ) );
+                    if ( pathToProposedType.isEmpty() ) {
+                        proposeIfPrefixMatches( propertyPrefix, sourceNameToType.keySet() );
+
+                        return null;
+                    }
+                    else {
+                        // for multiple source params, the first element would be expected to be the parameter name
+                        String first = pathToProposedType.removeFirst();
+
+                        proposalType = sourceNameToType.get( first );
                     }
                 }
-            }
-        }
-
-        private boolean isEnumMapping() {
-            return ( ( sourceNameToType.size() == 1 && sourceNameToType.values().iterator().next().isEnum() )
-                || resultType.isEnum() );
-        }
-
-        public Collection<String> getProperties() {
-            if ( source ) {
-                return sourceProperties;
+                else {
+                    proposalType = sourceNameToType.values().iterator().next();
+                }
             }
             else {
-                return targetProperties;
+                if ( resultType == null ) {
+                    proposalType = node.resolveBinding().getReturnType();
+                }
+                else {
+                    proposalType = resultType;
+                }
             }
+
+            return retrieveProposalTypeFromPath( proposalType, pathToProposedType );
+        }
+
+        private ITypeBinding retrieveProposalTypeFromPath(ITypeBinding proposalType, Deque<String> pathToProposedType) {
+            if ( proposalType != null && !pathToProposedType.isEmpty() ) {
+                if ( proposalType.isEnum() ) {
+                    return null;
+                }
+
+                String propertyName = pathToProposedType.removeFirst();
+                Collection<IMethodBinding> methodNames = Bindings.findAllMethods( proposalType );
+
+                String[] prefixes = source ? READ_ACCESSOR_PREFIXES : WRITE_ACCESSOR_PREFIXES;
+                Map<String, List<IMethodBinding>> propertyMethods =
+                    findPropertyMethods( propertyName, methodNames, prefixes );
+                if ( !propertyMethods.isEmpty() ) {
+                    IMethodBinding firstMethod = propertyMethods.values().iterator().next().iterator().next();
+                    ITypeBinding nextType;
+                    if ( source ) {
+                        nextType = firstMethod.getReturnType();
+                    }
+                    else {
+                        nextType = ( firstMethod.getParameterTypes().length > 0 ? firstMethod.getParameterTypes()[0]
+                                        : firstMethod.getReturnType() );
+                    }
+
+                    proposalType = retrieveProposalTypeFromPath( nextType, pathToProposedType );
+                }
+                else {
+                    return null;
+                }
+            }
+
+            return proposalType;
+        }
+
+        private void proposePropertiesIfPrefixMatches(String propertyPrefix, ITypeBinding type) {
+            if ( type.isEnum() ) {
+                proposeIfPrefixMatches( propertyPrefix, Bindings.findAllEnumConstants( type ) );
+            }
+            else {
+                Collection<IMethodBinding> methodNames = Bindings.findAllMethods( type );
+                if ( source ) {
+                    proposeIfPrefixMatches(
+                        propertyPrefix,
+                        findPropertyMethods( methodNames, READ_ACCESSOR_PREFIXES ).keySet() );
+                }
+                else {
+                    proposeIfPrefixMatches(
+                        propertyPrefix,
+                        findPropertyMethods( methodNames, WRITE_ACCESSOR_PREFIXES ).keySet() );
+                }
+            }
+        }
+
+        private void proposeIfPrefixMatches(String propertyPrefix, Collection<String> keySet) {
+            for ( String value : keySet ) {
+                proposeIfPrefixMatches( propertyPrefix, value );
+            }
+        }
+
+        private void proposeIfPrefixMatches(String prefix, String value) {
+            if ( prefix.isEmpty() || value.startsWith( prefix ) ) {
+                proposedProperties.add( proposalPrefix + value );
+            }
+        }
+
+
+        public Collection<String> getProperties() {
+            return proposedProperties;
         }
 
         public boolean isValidValue() {
             return valid;
         }
+    }
+
+    private static String getLastPathElement(String path) {
+        int lastDot = path.lastIndexOf( '.' );
+        if ( lastDot >= 0 ) {
+            return path.substring( lastDot + 1, path.length() );
+        }
+        return path;
+    }
+
+    private static String getPathWithoutLastElement(String path) {
+        int lastDot = path.lastIndexOf( '.' );
+        if ( lastDot >= 0 ) {
+            return path.substring( 0, lastDot );
+        }
+        return "";
     }
 
     private static final List<String> MAPPING_ANNOTATION_NAMES = Arrays.asList(
@@ -187,9 +295,8 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
         VALUE_MAPPING_FQ_NAME,
         VALUE_MAPPING_SIMPLE_NAME );
 
-    private static final String GET_PREFIX = "get"; //$NON-NLS-1$
-    private static final String SET_PREFIX = "set"; //$NON-NLS-1$
-    private static final String IS_PREFIX = "is"; //$NON-NLS-1$
+    private static final String[] READ_ACCESSOR_PREFIXES = { "get", "is" }; //$NON-NLS-1$
+    private static final String[] WRITE_ACCESSOR_PREFIXES = { "set" }; //$NON-NLS-1$
 
     /**
      * Parses the given {@link ICompilationUnit} and returns {@link ICompletionProposal}s for the given invocation
@@ -208,7 +315,7 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
 
         ASTNode astNode = parser.createAST( null );
 
-        PropertyNameProposalCollector astVisitor = new PropertyNameProposalCollector( invocationOffset );
+        PropertyNameProposalCollector astVisitor = new PropertyNameProposalCollector( invocationOffset, token );
 
         astNode.accept( astVisitor );
 
@@ -216,26 +323,20 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
             Collection<String> propertiesToProcess = astVisitor.getProperties();
 
             for ( String property : propertiesToProcess ) {
+                String replacement = property.substring( token.length() );
 
-                if ( property.startsWith( token ) ) {
+                CompletionProposal proposal =
+                    new CompletionProposal(
+                        replacement,
+                        invocationOffset,
+                        0,
+                        replacement.length(),
+                        JavaUI.getSharedImages().getImage( ISharedImages.IMG_OBJS_PUBLIC ),
+                        property,
+                        null,
+                        null );
 
-                    String replacement = property.substring( token.length() );
-
-                    CompletionProposal proposal =
-                        new CompletionProposal(
-                            replacement,
-                            invocationOffset,
-                            0,
-                            replacement.length(),
-                            JavaUI.getSharedImages().getImage( ISharedImages.IMG_OBJS_PUBLIC ),
-                            property,
-                            null,
-                            null );
-
-                    returnValue.add( proposal );
-
-                }
-
+                returnValue.add( proposal );
             }
 
         }
@@ -249,17 +350,50 @@ public class MappingAnnotationCompletionProposalComputer extends AbstractAnnotat
     }
 
     /**
-     * Finds {@link IMethodBinding}s starting with the given prefix and extracts the associated property name from it.
+     * Finds {@link IMethodBinding}s starting with any of the given prefixes for the given property.
      */
-    private List<String> findProperties(Collection<String> methodNames, String methodPrefix) {
-        List<String> returnValue = new ArrayList<String>();
-        for ( String methodName : methodNames ) {
-            if ( methodName.startsWith( methodPrefix ) ) {
-                String propertyName = methodName.substring( methodPrefix.length() );
-                returnValue.add( Introspector.decapitalize( propertyName ) );
+    private Map<String, List<IMethodBinding>> findPropertyMethods(String propertyName,
+                                                                  Collection<IMethodBinding> methods,
+                                                                  String... candidatePrefixes) {
+        Map<String, List<IMethodBinding>> returnValue = new HashMap<String, List<IMethodBinding>>();
+        for ( IMethodBinding method : methods ) {
+            String methodName = method.getName();
+            String matchingPrefix = getMatchingPrefix( methodName, candidatePrefixes );
+            if ( matchingPrefix != null ) {
+                String methodPropertyName =
+                    Introspector.decapitalize( methodName.substring( matchingPrefix.length() ) );
+
+                if ( propertyName == null || methodPropertyName.equals( propertyName ) ) {
+                    List<IMethodBinding> accessorMethods = returnValue.get( methodPropertyName );
+                    if ( accessorMethods == null ) {
+                        accessorMethods = new ArrayList<IMethodBinding>( 2 );
+                        returnValue.put( methodPropertyName, accessorMethods );
+                    }
+
+                    accessorMethods.add( method );
+                }
             }
         }
+
         return returnValue;
+    }
+
+    /**
+     * Finds {@link IMethodBinding}s starting with any of the given prefix and extracts the associated property name
+     * from it.
+     */
+    private Map<String, List<IMethodBinding>> findPropertyMethods(Collection<IMethodBinding> methods,
+                                                                  String[] candidatePrefixes) {
+        return findPropertyMethods( null, methods, candidatePrefixes );
+    }
+
+    private String getMatchingPrefix(String methodName, String[] candidatePrefixes) {
+        for ( String prefix : candidatePrefixes ) {
+            if ( methodName.startsWith( prefix ) ) {
+                return prefix;
+            }
+        }
+        return null;
     }
 
     private boolean isTargetNode(MemberValuePair node) {
