@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.mapstruct.eclipse.internal;
+package org.mapstruct.eclipse.internal.proposal;
 
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +31,7 @@ import org.eclipse.jdt.ui.text.java.IJavaCompletionProposalComputer;
 import org.eclipse.jdt.ui.text.java.JavaContentAssistInvocationContext;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContextInformation;
+import org.mapstruct.eclipse.internal.util.Ranges;
 
 /**
  * Base class for completion proposal computers.
@@ -89,7 +90,7 @@ abstract class AbstractAnnotationCompletionProposalComputer implements IJavaComp
             for ( final IAnnotation annotation : annotatable.getAnnotations() ) {
 
                 if ( getAnnotationNames().contains( annotation.getElementName() )
-                    && isInRange(
+                    && Ranges.isInRange(
                         invocationOffset,
                         annotation.getSourceRange().getOffset(),
                         annotation.getSourceRange().getLength() ) ) {
@@ -114,14 +115,4 @@ abstract class AbstractAnnotationCompletionProposalComputer implements IJavaComp
                                                               String valueOf);
 
     protected abstract List<String> getAnnotationNames();
-
-    /**
-     * Tests if the given offset is in range specified by the given start position and length.
-     */
-    protected boolean isInRange(int offset, int rangeStartPosition, int rangeLength) {
-        if ( rangeStartPosition < offset && offset < rangeStartPosition + rangeLength ) {
-            return true;
-        }
-        return false;
-    }
 }

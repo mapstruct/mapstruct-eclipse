@@ -25,7 +25,8 @@
          id="mapstructCompletionProposalComputer"
          name="MapStruct Proposals"
          point="org.eclipse.jdt.ui.javaCompletionProposalComputer">
-      <proposalCategory></proposalCategory>
+      <proposalCategory
+            icon="icons/mapstruct-small.png"></proposalCategory>
    </extension>
    <extension
          id="mappingAnnotationCompletionProposalComputer"
@@ -33,7 +34,7 @@
       <javaCompletionProposalComputer
             activate="true"
             categoryId="org.mapstruct.eclipse.mapstructCompletionProposalComputer"
-            class="org.mapstruct.eclipse.internal.MappingAnnotationCompletionProposalComputer"
+            class="org.mapstruct.eclipse.internal.proposal.MappingAnnotationCompletionProposalComputer"
             needsSortingAfterFiltering="true">
       </javaCompletionProposalComputer>
    </extension>
@@ -43,7 +44,7 @@
       <javaCompletionProposalComputer
             activate="true"
             categoryId="org.mapstruct.eclipse.mapstructCompletionProposalComputer"
-            class="org.mapstruct.eclipse.internal.MapperAnnotationCompletionProposalComputer"
+            class="org.mapstruct.eclipse.internal.proposal.MapperAnnotationCompletionProposalComputer"
             needsSortingAfterFiltering="true">
       </javaCompletionProposalComputer>
    </extension>

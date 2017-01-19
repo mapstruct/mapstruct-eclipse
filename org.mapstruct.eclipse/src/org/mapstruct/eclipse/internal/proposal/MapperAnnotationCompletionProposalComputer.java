@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.mapstruct.eclipse.internal;
+package org.mapstruct.eclipse.internal.proposal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +28,7 @@ import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ICompletionProposal;
+import org.mapstruct.eclipse.internal.MapStructAPIConstants;
 
 /**
  * Computes MapStruct specific content assist completion proposals for the {@code @Mapper} annotation.
