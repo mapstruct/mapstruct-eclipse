@@ -93,7 +93,6 @@ public abstract class MapStructQuickFix implements IMarkerResolution2 {
      *         stated in the marker
      * @throws CoreException
      */
-    @SuppressWarnings("unchecked")
     private static int findProblemStart(IEditorInput input, IMarker marker) throws CoreException {
         IAnnotationModel model =
             JavaPlugin.getDefault().getCompilationUnitDocumentProvider().getAnnotationModel( input );
